@@ -5,6 +5,7 @@ import os, dotenv
 dotenv.load_dotenv()
 
 TOKEN = os.environ["TOKEN"]
+IYED_ID = os.environ["IYED_ID"]
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -32,8 +33,40 @@ async def on_message(msg):
                         await msgg.delete()
                         break
 
-        await msg.guild.kick(msg.author, reason = "Spam/Compromised account")
-        print(f"Kicked {msg.author}")
+
+        
+        try:
+            await msg.author.send(
+                "⚠️ You have been automatically removed from the server "
+                "because your account triggered the spam protection system.\n\n"
+                "If this was a mistake, please contact a server administrator."
+            )
+        except discord.Forbidden:
+            print(f"⚠️ Could not DM {msg.author}")
+
+        try:
+            await msg.guild.kick(
+                msg.author,
+                reason="Spam/Compromised account"
+            )
+            print(f"Kicked {msg.author}")
+
+        except discord.Forbidden:
+            print(
+                f"❌ FAILED TO KICK {msg.author}: "
+                "Missing permissions or bot role is too low."
+            )
+            return
+
+        owner = await bot.fetch_user(int(IYED_ID))
+
+        await owner.send(
+            f"🚨 **Honeypot triggered**\n"
+            f"**User:** {msg.author} (`{msg.author.id}`)\n"
+            f"**Server:** {msg.guild.name} (`{msg.guild.id}`)\n"
+            f"**Channel:** #{msg.channel.name}\n"
+            f"**Action:** Kicked"
+        )
 
         return
 
