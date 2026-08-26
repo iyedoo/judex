@@ -10,7 +10,7 @@ IYED_ID = os.environ["IYED_ID"]
 intents = discord.Intents.default()
 intents.message_content = True
 
-bot = discord.Client(intents = intents)
+bot = discord.Client(intents=intents)
 
 @bot.event
 async def on_ready():
@@ -21,20 +21,21 @@ async def on_ready():
 async def on_message(msg):
     if msg.author.bot:
         return
+
     if msg.channel.name == "gulag":
         print(f"Triggered by {msg.author}")
-
         await msg.delete()
 
         for channel in msg.guild.channels:
-            if isinstance(channel, (discord.TextChannel, discord.VoiceChannel, discord.StageChannel)):
-                async for msgg in channel.history(limit=100):
-                    if msgg.author.id == msg.author.id:
-                        await msgg.delete()
-                        break
+            if isinstance(channel, discord.TextChannel):
+                try:
+                    async for msgg in channel.history(limit=100):
+                        if msgg.author.id == msg.author.id:
+                            await msgg.delete()
+                            break
+                except discord.Forbidden:
+                    print(f"⚠️ Could not access #{channel.name}")
 
-
-        
         try:
             await msg.author.send(
                 "⚠️ You have been automatically removed from the server "
@@ -45,12 +46,8 @@ async def on_message(msg):
             print(f"⚠️ Could not DM {msg.author}")
 
         try:
-            await msg.guild.kick(
-                msg.author,
-                reason="Spam/Compromised account"
-            )
+            await msg.guild.kick(msg.author, reason="Spam/Compromised account")
             print(f"Kicked {msg.author}")
-
         except discord.Forbidden:
             print(
                 f"❌ FAILED TO KICK {msg.author}: "
@@ -59,7 +56,6 @@ async def on_message(msg):
             return
 
         owner = await bot.fetch_user(int(IYED_ID))
-
         await owner.send(
             f"🚨 **Honeypot triggered**\n"
             f"**User:** {msg.author} (`{msg.author.id}`)\n"
